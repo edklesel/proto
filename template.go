@@ -154,6 +154,10 @@ func templateFields(v reflect.Value, nonce int) {
 
 }
 
+func _template(v reflect.Value, nonce int) {
+	templateFields(v, nonce)
+}
+
 func Template(v interface{}) int {
 
 	var nonce int = rand.Intn(1e5)
@@ -162,8 +166,4 @@ func Template(v interface{}) int {
 	_template(objValue, nonce)
 
 	return nonce
-}
-
-func _template(v reflect.Value, nonce int) {
-	templateFields(v, nonce)
 }

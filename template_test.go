@@ -48,26 +48,26 @@ func TestPrototyping(t *testing.T) {
 		var protoStruct Test
 		var nonce int = Template(&protoStruct)
 
-		assert.Equal(t, *protoStruct.StringPtr, fmt.Sprintf("StringPtr_%d", nonce))
-		assert.Equal(t, protoStruct.String, fmt.Sprintf("String_%d", nonce))
+		assert.Equal(t, fmt.Sprintf("StringPtr_%d", nonce), *protoStruct.StringPtr)
+		assert.Equal(t, fmt.Sprintf("String_%d", nonce), protoStruct.String)
 
-		assert.Equal(t, *protoStruct.IntPtr, nonce)
-		assert.Equal(t, protoStruct.Int, nonce)
+		assert.Equal(t, nonce, *protoStruct.IntPtr)
+		assert.Equal(t, nonce, protoStruct.Int)
 
-		assert.Equal(t, *protoStruct.BoolPtr, true)
-		assert.Equal(t, protoStruct.Bool, true)
+		assert.Equal(t, true, *protoStruct.BoolPtr)
+		assert.Equal(t, true, protoStruct.Bool)
 
-		assert.Equal(t, *protoStruct.StringSlicePtr, []string{fmt.Sprintf("StringSlicePtr_%d", nonce)})
-		assert.Equal(t, protoStruct.StringSlice, []string{fmt.Sprintf("StringSlice_%d", nonce)})
+		assert.Equal(t, []string{fmt.Sprintf("StringSlicePtr_%d", nonce)}, *protoStruct.StringSlicePtr)
+		assert.Equal(t, []string{fmt.Sprintf("StringSlice_%d", nonce)}, protoStruct.StringSlice)
 
-		assert.Equal(t, *protoStruct.IntSlicePtr, []int{nonce})
-		assert.Equal(t, protoStruct.IntSlice, []int{nonce})
+		assert.Equal(t, []int{nonce}, *protoStruct.IntSlicePtr)
+		assert.Equal(t, []int{nonce}, protoStruct.IntSlice)
 
 		var subStringExpected string = fmt.Sprintf("SubStrPtr_%d", nonce)
 		var subTestExpexted SubTest = SubTest{SubInt: nonce, SubStrPtr: &subStringExpected}
 		assert.Empty(t, deep.Equal(protoStruct.SubTest, subTestExpexted))
-		assert.Equal(t, protoStruct.SubInt, nonce)
-		assert.Equal(t, *protoStruct.SubStrPtr, subStringExpected)
+		assert.Equal(t, nonce, protoStruct.SubInt)
+		assert.Equal(t, subStringExpected, *protoStruct.SubStrPtr)
 
 		assert.Empty(t, deep.Equal(protoStruct.StructSlice, []SubTest{subTestExpexted}))
 
