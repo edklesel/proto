@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func templateFields(v reflect.Value, nonce int) {
+func prototypeFields(v reflect.Value, nonce int) {
 
 	// Get the type of the input struct
 	objType := v.Type()
@@ -42,14 +42,14 @@ func templateFields(v reflect.Value, nonce int) {
 		// Set the different values for different types of the field
 		var stringVal, intVal, boolVal reflect.Value
 
-		var fieldTemplate string = field.Tag.Get("proto")
+		var protoTag string = field.Tag.Get("proto")
 
 		stringVal = reflect.ValueOf(fmt.Sprintf("%s_%d", field.Name, nonce))
 		intVal = reflect.ValueOf(nonce)
 		boolVal = reflect.ValueOf(true)
 
 		// This is the error message, in case we need it later
-		var typeError string = fmt.Sprintf("Cannot provide \"%s\" as value for field %s of kind %s", fieldTemplate, field.Name, field.Type.Kind())
+		var typeError string = fmt.Sprintf("Cannot provide \"%s\" as value for field %s of kind %s", protoTag, field.Name, field.Type.Kind())
 
 		// Set the value based on the type.
 		// In each type check block, we also check if the template
@@ -58,25 +58,25 @@ func templateFields(v reflect.Value, nonce int) {
 		switch valKind {
 		// For structs, recurse
 		case reflect.Struct:
-			templateFields(valToSet, nonce)
+			prototypeFields(valToSet, nonce)
 
 			// For strings, we format the name of the field and the nonce
 		case reflect.String:
 
-			switch fieldTemplate == "" {
+			switch protoTag == "" {
 			case true:
 				valToSet.Set(stringVal)
 			case false:
-				valToSet.Set(reflect.ValueOf(fieldTemplate))
+				valToSet.Set(reflect.ValueOf(protoTag))
 			}
 
 		// For ints, we just use the nonce
 		case reflect.Int:
-			switch fieldTemplate == "" {
+			switch protoTag == "" {
 			case true:
 				valToSet.Set(intVal)
 			case false:
-				intVal, err := strconv.Atoi(fieldTemplate)
+				intVal, err := strconv.Atoi(protoTag)
 				if err != nil {
 					panic(typeError)
 				}
@@ -86,11 +86,11 @@ func templateFields(v reflect.Value, nonce int) {
 
 		// For bools, use true as the default
 		case reflect.Bool:
-			switch fieldTemplate == "" {
+			switch protoTag == "" {
 			case true:
 				valToSet.Set(boolVal)
 			case false:
-				boolVal, err := strconv.ParseBool(fieldTemplate)
+				boolVal, err := strconv.ParseBool(protoTag)
 				if err != nil {
 					panic(err)
 				}
@@ -113,11 +113,11 @@ func templateFields(v reflect.Value, nonce int) {
 			switch sliceKind {
 			case reflect.String:
 
-				switch fieldTemplate == "" {
+				switch protoTag == "" {
 				case true:
 					valToSet.Set(reflect.Append(valToSet, stringVal))
 				case false:
-					stringVals := strings.Split(fieldTemplate, ",")
+					stringVals := strings.Split(protoTag, ",")
 					for i := 0; i < len(stringVals); i++ {
 						stringVal = reflect.ValueOf(stringVals[i])
 						valToSet.Set(reflect.Append(valToSet, stringVal))
@@ -126,11 +126,11 @@ func templateFields(v reflect.Value, nonce int) {
 
 			case reflect.Int:
 
-				switch fieldTemplate == "" {
+				switch protoTag == "" {
 				case true:
 					valToSet.Set(reflect.Append(valToSet, intVal))
 				case false:
-					intVals := strings.Split(fieldTemplate, ",")
+					intVals := strings.Split(protoTag, ",")
 
 					for i := 0; i < len(intVals); i++ {
 						intVal, err := strconv.Atoi(intVals[i])
@@ -145,7 +145,7 @@ func templateFields(v reflect.Value, nonce int) {
 				// to the slice.
 			case reflect.Struct:
 				newStruct := reflect.New(sliceType).Elem()
-				_template(newStruct, nonce)
+				_prototype(newStruct, nonce)
 				valToSet.Set(reflect.Append(valToSet, newStruct))
 			}
 		}
@@ -154,16 +154,16 @@ func templateFields(v reflect.Value, nonce int) {
 
 }
 
-func Template(v interface{}) int {
+func _prototype(v reflect.Value, nonce int) {
+	prototypeFields(v, nonce)
+}
+
+func Prototype(v interface{}) int {
 
 	var nonce int = rand.Intn(1e5)
 
 	objValue := reflect.ValueOf(v).Elem()
-	_template(objValue, nonce)
+	_prototype(objValue, nonce)
 
 	return nonce
-}
-
-func _template(v reflect.Value, nonce int) {
-	templateFields(v, nonce)
 }
