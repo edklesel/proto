@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +13,11 @@ func TestModifying(t *testing.T) {
 	t.Run("Test modifying struct fields", func(t *testing.T) {
 
 		var protoStruct Test
-		var nonce int = Template(&protoStruct)
+		var nonce int = Prototype(&protoStruct)
+
+		// Save some values for testing later
+		structSliceBefore := protoStruct.StructSlice
+
 		Modify(&protoStruct)
 
 		assert.Equal(t, fmt.Sprintf("StringPtr_%d_Updated", nonce), *protoStruct.StringPtr)
@@ -52,15 +57,44 @@ func TestModifying(t *testing.T) {
 				nonce+1,
 			},
 			protoStruct.IntSlice,
-		)	
+		)
+		
 
-		// var subStringExpected string = fmt.Sprintf("SubStrPtr_%d", nonce)
-		// var subTestExpexted SubTest = SubTest{SubInt: nonce, SubStrPtr: &subStringExpected}
-		// assert.Empty(t, deep.Equal(protoStruct.SubTest, subTestExpexted))
-		// assert.Equal(t, protoStruct.SubInt, nonce)
-		// assert.Equal(t, *protoStruct.SubStrPtr, subStringExpected)
+		var subStringExpected string = fmt.Sprintf("SubStrPtr_%d_Updated", nonce)
+		var subTestExpexted SubTest = SubTest{SubInt: nonce + 1, SubStrPtr: &subStringExpected}
+		assert.Empty(t, deep.Equal(protoStruct.SubTest, subTestExpexted))
+		assert.Equal(t, protoStruct.SubInt, nonce + 1)
+		assert.Equal(t, *protoStruct.SubStrPtr, subStringExpected)
 
-		// assert.Empty(t, deep.Equal(protoStruct.StructSlice, []SubTest{subTestExpexted}))
+		assert.NotContains(t, structSliceBefore, protoStruct.StructSlice[len(protoStruct.StructSlice) - 1])
+
+	})
+
+	t.Run("Modify fields with tags", func(t *testing.T) {
+
+		type ModTest struct {
+			String string `proto:"stringVal"`
+			IntPtr *int    `proto:"1"`
+
+			StringPtr *string `proto:"stringVal2" proto.modify:"modifiedVal"`
+			Int	int `proto:"33" proto.modify:"44"`
+
+			StringSlice []string `proto.modify:"val1,val2,val3"`
+			IntSlicePtr *[]int `proto.modify:"5,6,7"`
+		}
+
+		var modTest ModTest
+		Prototype(&modTest)
+		Modify(&modTest)
+
+		assert.Equal(t, "stringVal", modTest.String)
+		assert.Equal(t, 1, *modTest.IntPtr)
+
+		assert.Equal(t, "modifiedVal", *modTest.StringPtr)
+		assert.Equal(t, 44, modTest.Int)
+
+		assert.Empty(t, deep.Equal([]string{"val1","val2","val3"}, modTest.StringSlice))
+		assert.Empty(t, deep.Equal([]int{5,6,7}, *modTest.IntSlicePtr))
 
 	})
 }
