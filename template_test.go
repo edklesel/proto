@@ -46,7 +46,7 @@ func TestPrototyping(t *testing.T) {
 	t.Run("Test basic prototyping", func(t *testing.T) {
 
 		var protoStruct Test
-		var nonce int = Template(&protoStruct)
+		var nonce int = Prototype(&protoStruct)
 
 		assert.Equal(t, fmt.Sprintf("StringPtr_%d", nonce), *protoStruct.StringPtr)
 		assert.Equal(t, fmt.Sprintf("String_%d", nonce), protoStruct.String)
@@ -76,7 +76,7 @@ func TestPrototyping(t *testing.T) {
 	t.Run("Test prototyping with tags", func(t *testing.T) {
 
 		var proto TestWithTags
-		var nonce int = Template(&proto)
+		var nonce int = Prototype(&proto)
 
 		assert.Equal(t, proto.StringNoTag, fmt.Sprintf("StringNoTag_%d", nonce))
 		assert.Equal(t, proto.StringTag, "TagValue")
