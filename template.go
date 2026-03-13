@@ -56,7 +56,7 @@ func prototypeFields(v reflect.Value, nonce int, ver *version.Version) {
 
 			// If the version doesn't match the constraint, then we skip this field
 			if !constraints.Check(ver) {
-				valToSet.SetZero()
+				val.SetZero()
 				continue
 			}
 		}
