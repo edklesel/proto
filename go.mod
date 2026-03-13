@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	github.com/go-test/deep v1.1.1
+	github.com/hashicorp/go-version v1.8.0
 	github.com/stretchr/testify v1.10.0
 )
 
