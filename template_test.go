@@ -46,6 +46,10 @@ type TestWithVersion struct {
 	StringNoTag string
 	StringTagMatch   string	`proto.constraint:"<= 1.0"`
 	StringTagNoMatch string	`proto.constraint:"> 1.0"`
+
+	StringPtrNoTag *string
+	StringPtrTagMatch   *string	`proto.constraint:"<= 1.0"`
+	StringPtrTagNoMatch *string	`proto.constraint:"> 1.0"`
 }
 
 func TestPrototyping(t *testing.T) {
@@ -108,9 +112,13 @@ func TestPrototyping(t *testing.T) {
 		var version, _ = version.NewVersion("0.9")
 		var nonce int = PrototypeWithVersion(&proto, version)
 
-		assert.Equal(t, proto.StringNoTag, fmt.Sprintf("StringNoTag_%d", nonce))
-		assert.Equal(t, proto.StringTagMatch, fmt.Sprintf("StringTagMatch_%d", nonce))
+		assert.Equal(t, fmt.Sprintf("StringNoTag_%d", nonce), proto.StringNoTag)
+		assert.Equal(t, fmt.Sprintf("StringTagMatch_%d", nonce), proto.StringTagMatch)
 		assert.Zero(t, proto.StringTagNoMatch)
+
+		assert.Equal(t, fmt.Sprintf("StringPtrNoTag_%d", nonce), *proto.StringPtrNoTag)
+		assert.Equal(t, fmt.Sprintf("StringPtrTagMatch_%d", nonce), *proto.StringPtrTagMatch)
+		assert.Nil(t, proto.StringPtrTagNoMatch)
 
 	})
 
