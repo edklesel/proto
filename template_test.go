@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
+	"github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,6 +40,12 @@ type TestWithTags struct {
 	StringSliceTag []string  `proto:"TagValue1,TagValue2"`
 	IntSliceNoTag []int
 	IntSliceTag []int  `proto:"1,2,3"`
+}
+
+type TestWithVersion struct {
+	StringNoTag string
+	StringTagMatch   string	`proto.constraint:"<= 1.0"`
+	StringTagNoMatch string	`proto.constraint:"> 1.0"`
 }
 
 func TestPrototyping(t *testing.T) {
@@ -92,6 +99,18 @@ func TestPrototyping(t *testing.T) {
 
 		assert.Equal(t, proto.IntSliceNoTag, []int{nonce})
 		assert.Equal(t, proto.IntSliceTag, []int{1,2,3})
+
+	})
+
+	t.Run("Test prototyping with a version", func(t *testing.T) {
+
+		var proto TestWithVersion
+		var version, _ = version.NewVersion("0.9")
+		var nonce int = PrototypeWithVersion(&proto, version)
+
+		assert.Equal(t, proto.StringNoTag, fmt.Sprintf("StringNoTag_%d", nonce))
+		assert.Equal(t, proto.StringTagMatch, fmt.Sprintf("StringTagMatch_%d", nonce))
+		assert.Zero(t, proto.StringTagNoMatch)
 
 	})
 

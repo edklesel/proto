@@ -6,9 +6,11 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	version "github.com/hashicorp/go-version"
 )
 
-func modifyFields(v reflect.Value) {
+func modifyFields(v reflect.Value, ver *version.Version) {
 
 	objType := v.Type()
 
@@ -35,6 +37,7 @@ func modifyFields(v reflect.Value) {
 
 		var protoTag string = field.Tag.Get("proto")
 		var modTag string = field.Tag.Get("proto.modify")
+		var constraintTag string = field.Tag.Get("proto.constraint")
 
 		// This is the error message, in case we need it later
 		var typeError string = fmt.Sprintf("Cannot provide \"%s\" as value for field %s of kind %s", modTag, field.Name, field.Type.Kind())
@@ -45,11 +48,25 @@ func modifyFields(v reflect.Value) {
 			continue
 		}
 
+		// If the version is provided and the constraint tag is also provided,
+		// compare the version to the version in the proto tag
+		if ver != nil && constraintTag != "" {
+			constraints, err := version.NewConstraint(constraintTag)
+			if err != nil {
+				panic(fmt.Sprintf("Unable to parse version constraint for field %s: %s", field.Name, err))
+			}
+
+			// If the version doesn't match the constraint, then we skip this field
+			if !constraints.Check(ver) {
+				continue
+			}
+		}
+
 		currentVal := fmt.Sprintf("%v", valToSet.Interface())
 
 		switch valKind {
 		case reflect.Struct:
-			modifyFields(valToSet)
+			modifyFields(valToSet, ver)
 
 		case reflect.String:
 			var newVal string
@@ -145,20 +162,27 @@ func modifyFields(v reflect.Value) {
 				// The modify tag isn't supported for slices of structs
 			case reflect.Struct:
 				newVal := reflect.New(sliceType).Elem()
-				_prototype(newVal, rand.IntN(1e3))
+				_prototype(newVal, rand.IntN(1e3), nil)
 				valToSet.Set(reflect.Append(valToSet, newVal))
 			}
 		}
 	}
 }
 
-func _modify(v reflect.Value) {
-	modifyFields(v)
+func _modify(v reflect.Value, ver *version.Version) {
+	modifyFields(v, ver)
 }
 
 func Modify(v interface{}) {
 
 	objValue := reflect.ValueOf(v).Elem()
-	_modify(objValue)
+	_modify(objValue, nil)
+
+}
+
+func ModifyWithVersion(v interface{}, ver *version.Version) {
+
+	objValue := reflect.ValueOf(v).Elem()
+	_modify(objValue, ver)
 
 }

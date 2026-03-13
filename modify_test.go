@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
+	"github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,6 +96,25 @@ func TestModifying(t *testing.T) {
 
 		assert.Empty(t, deep.Equal([]string{"val1","val2","val3"}, modTest.StringSlice))
 		assert.Empty(t, deep.Equal([]int{5,6,7}, *modTest.IntSlicePtr))
+
+	})
+
+	t.Run("Modify fields with version", func(t *testing.T) {
+
+		type ModTestWithVersion struct {
+			StringModTagMatch   string `proto:"stringVal" proto.modify:"newStringVal" proto.constraint:"< 1.0"`
+			StringModTagNoMatch string `proto:"stringVal" proto.modify:"newStringValNoMatch" proto.constraint:">= 1.0"`
+		}
+		var test ModTestWithVersion
+
+		ver, _ := version.NewVersion("0.9")
+		fmt.Println(ver)
+		PrototypeWithVersion(&test, ver)
+		ModifyWithVersion(&test, ver)
+
+		assert.Equal(t, test.StringModTagMatch, "newStringVal")
+		assert.Zero(t, test.StringModTagNoMatch)
+
 
 	})
 }

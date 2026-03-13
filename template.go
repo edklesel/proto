@@ -6,9 +6,11 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	version "github.com/hashicorp/go-version"
 )
 
-func prototypeFields(v reflect.Value, nonce int) {
+func prototypeFields(v reflect.Value, nonce int, ver *version.Version) {
 
 	// Get the type of the input struct
 	objType := v.Type()
@@ -43,6 +45,22 @@ func prototypeFields(v reflect.Value, nonce int) {
 		var stringVal, intVal, boolVal reflect.Value
 
 		var protoTag string = field.Tag.Get("proto")
+		var constraintTag string = field.Tag.Get("proto.constraint")
+
+		// First, if provided, we compare the version to the version in the proto tag
+		if ver != nil && constraintTag != "" {
+			constraints, err := version.NewConstraint(constraintTag)
+			if err != nil {
+				panic(fmt.Sprintf("Unable to parse version constraint for field %s: %s", field.Name, err))
+			}
+
+			// If the version doesn't match the constraint, then we skip this field
+			if !constraints.Check(ver) {
+				valToSet.SetZero()
+				continue
+			}
+		}
+		
 
 		stringVal = reflect.ValueOf(fmt.Sprintf("%s_%d", field.Name, nonce))
 		intVal = reflect.ValueOf(nonce)
@@ -58,7 +76,7 @@ func prototypeFields(v reflect.Value, nonce int) {
 		switch valKind {
 		// For structs, recurse
 		case reflect.Struct:
-			prototypeFields(valToSet, nonce)
+			prototypeFields(valToSet, nonce, ver)
 
 			// For strings, we format the name of the field and the nonce
 		case reflect.String:
@@ -145,7 +163,7 @@ func prototypeFields(v reflect.Value, nonce int) {
 				// to the slice.
 			case reflect.Struct:
 				newStruct := reflect.New(sliceType).Elem()
-				_prototype(newStruct, nonce)
+				_prototype(newStruct, nonce, ver)
 				valToSet.Set(reflect.Append(valToSet, newStruct))
 			}
 		}
@@ -154,8 +172,8 @@ func prototypeFields(v reflect.Value, nonce int) {
 
 }
 
-func _prototype(v reflect.Value, nonce int) {
-	prototypeFields(v, nonce)
+func _prototype(v reflect.Value, nonce int, ver *version.Version) {
+	prototypeFields(v, nonce, ver)
 }
 
 func Prototype(v interface{}) int {
@@ -163,7 +181,17 @@ func Prototype(v interface{}) int {
 	var nonce int = rand.Intn(1e5)
 
 	objValue := reflect.ValueOf(v).Elem()
-	_prototype(objValue, nonce)
+	_prototype(objValue, nonce, nil)
+
+	return nonce
+}
+
+func PrototypeWithVersion(v interface{}, ver *version.Version) int {
+	
+	var nonce int = rand.Intn(1e5)
+
+	objValue := reflect.ValueOf(v).Elem()
+	_prototype(objValue, nonce, ver)
 
 	return nonce
 }
